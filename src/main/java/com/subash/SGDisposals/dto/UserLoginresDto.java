@@ -11,4 +11,5 @@ public class UserLoginresDto {
     private String message;
     private Long id;
     private RoleEnum role;
+    private String token;
 }

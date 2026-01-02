@@ -13,6 +13,7 @@ import com.subash.SGDisposals.repositories.CollectionRepo;
 import com.subash.SGDisposals.repositories.OrderRepo;
 import com.subash.SGDisposals.repositories.UserRepo;
 import com.subash.SGDisposals.service.IUserService;
+import com.subash.SGDisposals.util.JwtUtil;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -34,6 +35,7 @@ public class UserService implements IUserService {
     private final UserRepo userRepo;
     private final CollectionRepo collectionRepo;
     private final OrderRepo ordersRepo;
+    private final JwtUtil jwtUtil;
 
     @Transactional
     @Override
@@ -146,7 +148,9 @@ public class UserService implements IUserService {
 
         if(user.isPresent()){
             if(user.get().getPassword().equals(userLoginReqDto.getPassword())){
+                String token = jwtUtil.generateToken(userLoginReqDto.getEmail(),user.get().getRole());
                 BeanUtils.copyProperties(user.get(), userLoginresDto);
+                userLoginresDto.setToken(token);
                 userLoginresDto.setMessage("User has been successfully logged in!");
                 userLoginresDto.setId(user.get().getId());
                 return userLoginresDto;

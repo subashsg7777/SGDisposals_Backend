@@ -19,7 +19,7 @@ import java.util.Map;
 import java.util.Objects;
 
 @RestController
-@RequestMapping("api/v1/user/")
+@RequestMapping("api/v2/user/")
 @RequiredArgsConstructor
 @CrossOrigin(origins = "*")
 public class UserController {

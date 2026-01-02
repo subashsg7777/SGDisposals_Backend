@@ -15,7 +15,7 @@
         import java.util.Map;
 
         @RestController
-        @RequestMapping("api/v1/collector")
+        @RequestMapping("api/v2/collector")
         @RequiredArgsConstructor
         public class CollectorController {
 

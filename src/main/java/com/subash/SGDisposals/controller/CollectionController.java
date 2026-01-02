@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("api/v1/collections")
+@RequestMapping("api/v2/collections")
 @RequiredArgsConstructor
 public class CollectionController {
 
