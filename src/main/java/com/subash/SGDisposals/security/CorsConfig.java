@@ -19,7 +19,8 @@ public class CorsConfig {
         // Explicit local dev origins
         config.setAllowedOrigins(List.of(
                 "http://localhost:5173",
-                "http://localhost:4173"
+                "http://localhost:4173",
+                "https://sgdisposals.onrender.com/"
         ));
 
         // Dynamic origins (Cloudflare tunnels etc.)
