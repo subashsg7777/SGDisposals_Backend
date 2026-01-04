@@ -15,8 +15,7 @@ public class BuyProductReqDto {
     private Long product_id;
 
     @NotBlank
-    @JsonProperty("Transactional_password")
-    private String Transactional_password;
+    private String transactionalPassword;
 
     @NotNull
     private int quantity;

@@ -14,6 +14,7 @@ import com.subash.SGDisposals.repositories.OrderRepo;
 import com.subash.SGDisposals.repositories.UserRepo;
 import com.subash.SGDisposals.service.IUserService;
 import com.subash.SGDisposals.util.JwtUtil;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -22,6 +23,7 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -36,6 +38,7 @@ public class UserService implements IUserService {
     private final CollectionRepo collectionRepo;
     private final OrderRepo ordersRepo;
     private final JwtUtil jwtUtil;
+    private final PasswordEncoder passwordEncoder;
 
     @Transactional
     @Override
@@ -43,8 +46,11 @@ public class UserService implements IUserService {
         AddUserResDto  addUserResDto = new AddUserResDto();
         try{
             User user = new User();
+            String hashedPassword = passwordEncoder.encode(userRegisterReqDto.getPassword());
+            userRegisterReqDto.setPassword(hashedPassword);
             BeanUtils.copyProperties(userRegisterReqDto, user);
-            user.setCreatedAt(Instant.now());
+            user.setTransactional_password(userRegisterReqDto.getTransactionalPassword());
+            user.setCreatedAt(LocalDateTime.now());
             user.setPoints(0);
             userRepo.save(user);
             addUserResDto.setMessage("User has been successfully registered!");
@@ -124,8 +130,8 @@ public class UserService implements IUserService {
             CollectionRequest coreRequest = new CollectionRequest();
             BeanUtils.copyProperties(addNewRequestDto, coreRequest);
             coreRequest.setUser(user.orElseThrow());
-            coreRequest.setCreatedAt(Instant.now());
-            coreRequest.setUpdatedAt(Instant.now());
+            coreRequest.setCreatedAt(LocalDateTime.now());
+            coreRequest.setUpdatedAt(LocalDateTime.now());
             coreRequest.setDeleted(false);
             coreRequest.setStatus(StatusEnum.REQUESTED);
 
@@ -147,7 +153,7 @@ public class UserService implements IUserService {
         }));
 
         if(user.isPresent()){
-            if(user.get().getPassword().equals(userLoginReqDto.getPassword())){
+            if(passwordEncoder.matches(userLoginReqDto.getPassword(),user.get().getPassword())){
                 String token = jwtUtil.generateToken(userLoginReqDto.getEmail(),user.get().getRole());
                 BeanUtils.copyProperties(user.get(), userLoginresDto);
                 userLoginresDto.setToken(token);

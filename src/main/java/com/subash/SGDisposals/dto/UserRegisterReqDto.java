@@ -26,5 +26,5 @@ public class UserRegisterReqDto {
     private RoleEnum role = RoleEnum.USER;
 
     @NotBlank
-    private String Transactional_password;
+    private String transactionalPassword;
 }

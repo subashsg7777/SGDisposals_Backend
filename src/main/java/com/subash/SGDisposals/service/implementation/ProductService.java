@@ -14,6 +14,7 @@ import com.subash.SGDisposals.repositories.OrderRepo;
 import com.subash.SGDisposals.repositories.ProductRepo;
 import com.subash.SGDisposals.repositories.UserRepo;
 import com.subash.SGDisposals.service.IProductService;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -31,6 +32,7 @@ public class ProductService implements IProductService {
     private final OrderRepo orderRepo;
 
 
+    @Cacheable
     @Override
     public List<Product> getAllProducts() {
 
@@ -55,7 +57,7 @@ public class ProductService implements IProductService {
             throw new InvalidRequestStateException("Insufficient points");
         }
 
-        if (!user.getTransactional_password().equals(buyProductReqDto.getTransactional_password())) {
+        if (!user.getTransactional_password().equals(buyProductReqDto.getTransactionalPassword())) {
             throw new UnauthorizedRequestException("Invalid Transaction Password");
         }
 
