@@ -7,6 +7,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -20,6 +22,8 @@ import java.util.List;
 @Component
 public class JwtAuthFilter extends OncePerRequestFilter {
 
+    private static final Logger log = LoggerFactory.getLogger(JwtAuthFilter.class);
+
     @Autowired
     private JwtUtil jwtUtil;
 
@@ -28,6 +32,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         String authHeader = request.getHeader("Authorization");
 
+        log.info("JwtAuthFilter - Authorization header: {} Method: {} Path: {}", authHeader, request.getMethod(), request.getRequestURI());
+
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
@@ -35,13 +41,25 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         String token = authHeader.substring(7);
 
-        if(!jwtUtil.validateToken(token)){
+        boolean valid = false;
+        try {
+            valid = jwtUtil.validateToken(token);
+        } catch (Exception e) {
+            log.warn("Jwt token validation threw: {}", e.getMessage());
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        if(!valid){
+            log.info("JwtAuthFilter - token invalid");
             filterChain.doFilter(request,response);
             return;
         }
 
         String email = jwtUtil.extractEmail(token);
         String role = jwtUtil.extractRole(token).toString();
+
+        log.info("JwtAuthFilter - authenticated email: {} role: {}", email, role);
 
         SimpleGrantedAuthority simpleGrantedAuthority = new SimpleGrantedAuthority("ROLE_"+role);
 

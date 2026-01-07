@@ -14,6 +14,7 @@ import com.subash.SGDisposals.repositories.OrderRepo;
 import com.subash.SGDisposals.repositories.UserRepo;
 import com.subash.SGDisposals.service.IUserService;
 import com.subash.SGDisposals.util.JwtUtil;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -70,6 +71,7 @@ public class UserService implements IUserService {
         }
     }
 
+    @CacheEvict(value = "requestforcollector")
     @Transactional
     @Override
     public CancelReqResDto cancelRequest(Long id, Long userId) {
@@ -108,6 +110,7 @@ public class UserService implements IUserService {
         return cancelReqResDto;
     }
 
+    @CacheEvict(value = "requestforcollector", allEntries = true)
     @Transactional
     @Override
     public AddNewReqResDto addNewRequest(AddNewRequestDto addNewRequestDto) {

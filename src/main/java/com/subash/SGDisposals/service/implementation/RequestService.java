@@ -19,6 +19,8 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,6 +38,7 @@ public class RequestService implements IRequestService {
     private final PointsRepo pointsRepo;
     private final CollectorService collectorService;
 
+    @Cacheable
     @Override
     public List<AllUserRequestDto> getAllRequestsForUser(Long id) {
 
@@ -58,9 +61,10 @@ public class RequestService implements IRequestService {
         }
     }
 
+    @Cacheable("requestforcollector")
     @Override
     public List<AllUserRequestDto> getAllRequestsForCollector() {
-
+        log.info("Entering getAllRequestsForCollector - cacheable");
         List<CollectionRequest> result = collectionRepo.findByStatusAndDeletedFalse(StatusEnum.REQUESTED).orElseThrow();
         return result.stream().map(item -> {
             AllUserRequestDto allUserRequestDto = new AllUserRequestDto();
@@ -99,6 +103,7 @@ public class RequestService implements IRequestService {
         return points[0];
     }
 
+    @CacheEvict(value = "requestforcollector", allEntries = true)
     @Transactional
     public CollectedResDto collectAndMark(CollectReqDto dto) {
         Long points = collectRequest(dto); // updates user points
