@@ -28,51 +28,72 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     private JwtUtil jwtUtil;
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+    protected void doFilterInternal(HttpServletRequest request,
+                                    HttpServletResponse response,
+                                    FilterChain filterChain)
+            throws ServletException, IOException {
 
         String authHeader = request.getHeader("Authorization");
 
-        log.info("JwtAuthFilter - Authorization header: {} Method: {} Path: {}", authHeader, request.getMethod(), request.getRequestURI());
+//        log.info(
+//                "JwtAuthFilter - Authorization header: {} Method: {} Path: {}",
+//                authHeader, request.getMethod(), request.getRequestURI()
+//        );
 
+        // 1️⃣ No header OR wrong prefix → skip
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            log.error("TOKEN IS NOT PRESENT IN REQUEST");
             filterChain.doFilter(request, response);
             return;
         }
 
         String token = authHeader.substring(7);
 
-        boolean valid = false;
-        try {
-            valid = jwtUtil.validateToken(token);
-        } catch (Exception e) {
-            log.warn("Jwt token validation threw: {}", e.getMessage());
+        // 2️⃣ Token sanity check
+        if (token.isBlank() || token.equals("null") || token.equals("undefined")) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        if(!valid){
-            log.info("JwtAuthFilter - token invalid");
-            filterChain.doFilter(request,response);
+        // 3️⃣ JWT structural check (xxx.yyy.zzz)
+        if (token.chars().filter(ch -> ch == '.').count() != 2) {
+            filterChain.doFilter(request, response);
             return;
         }
 
-        String email = jwtUtil.extractEmail(token);
-        String role = jwtUtil.extractRole(token).toString();
+        try {
+            if (!jwtUtil.validateToken(token)) {
+                log.error("INVALID TOKEN");
+                filterChain.doFilter(request, response);
+                return;
+            }
 
-        log.info("JwtAuthFilter - authenticated email: {} role: {}", email, role);
+            String email = jwtUtil.extractEmail(token);
+            String role = jwtUtil.extractRole(token).toString();
 
-        SimpleGrantedAuthority simpleGrantedAuthority = new SimpleGrantedAuthority("ROLE_"+role);
+            log.info("Auth Header: {}", authHeader);
 
-        UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken = new UsernamePasswordAuthenticationToken(
-                email,
-                null,
-                List.of(simpleGrantedAuthority)
-        );
 
-        usernamePasswordAuthenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+            SimpleGrantedAuthority authority =
+                    new SimpleGrantedAuthority("ROLE_" + role);
 
-        SecurityContextHolder.getContext().setAuthentication(usernamePasswordAuthenticationToken);
+            UsernamePasswordAuthenticationToken authentication =
+                    new UsernamePasswordAuthenticationToken(
+                            email,
+                            null,
+                            List.of(authority)
+                    );
 
-        filterChain.doFilter(request,response);
+            authentication.setDetails(
+                    new WebAuthenticationDetailsSource().buildDetails(request)
+            );
+
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+
+        } catch (Exception e) {
+            log.warn("JwtAuthFilter - invalid token: {}", e.getMessage());
+        }
+
+        filterChain.doFilter(request, response);
     }
 }

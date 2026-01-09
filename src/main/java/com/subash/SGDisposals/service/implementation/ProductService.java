@@ -19,9 +19,11 @@ import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -31,6 +33,11 @@ public class ProductService implements IProductService {
     private final UserRepo userRepo;
     private final OrderRepo orderRepo;
 
+    private String generateOrderId(){
+        String placeholders = "SG_DP_OR_";
+        String dateTime = LocalDateTime.now().toString();
+        return placeholders.concat(dateTime);
+    }
 
     @Cacheable
     @Override
@@ -71,6 +78,8 @@ public class ProductService implements IProductService {
 
         try {
             Order order = new Order();
+            String order_id = generateOrderId();
+            order.setOrder_id(order_id);
             order.setProductId(Double.valueOf(product.getId()));
             order.setUserId(Double.valueOf(user.getId()));
             order.setQuanity((double) buyProductReqDto.getQuantity());

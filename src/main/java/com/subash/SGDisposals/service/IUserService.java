@@ -15,4 +15,5 @@ public interface IUserService {
     UserLoginresDto loginuser(UserLoginReqDto userLoginReqDto);
     int getUserPoints(Long id);
     List<Order> getAllOrdersForUser(Long user_id);
+    ProfileResDto getUserProfile(Long user_id);
 }

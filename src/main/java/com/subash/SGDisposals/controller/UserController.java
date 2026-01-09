@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("api/v2/user/")
@@ -72,5 +73,11 @@ public class UserController {
 
         List<Order> orders = userService.getAllOrdersForUser(user_id);
         return ResponseEntity.status(HttpStatus.OK).body(orders);
+    }
+
+    @GetMapping("Get-Profile")
+    public ResponseEntity<ProfileResDto> getUserProfile(@Validated @NotNull @RequestParam Long user_id){
+        ProfileResDto resposnse = userService.getUserProfile(user_id);
+        return ResponseEntity.status(HttpStatus.OK).body(resposnse);
     }
 }

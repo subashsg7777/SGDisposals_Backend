@@ -18,6 +18,10 @@ public class Order {
     private Integer id;
 
     @NotNull
+    @Column(name = "order_id",nullable = false)
+    private String order_id;
+
+    @NotNull
     @Column(name = "product_id", nullable = false)
     private Double productId;
 

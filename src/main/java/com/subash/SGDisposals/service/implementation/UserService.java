@@ -11,6 +11,7 @@ import com.subash.SGDisposals.exception.ResourceNotFoundException;
 import com.subash.SGDisposals.exception.UnauthorizedRequestException;
 import com.subash.SGDisposals.repositories.CollectionRepo;
 import com.subash.SGDisposals.repositories.OrderRepo;
+import com.subash.SGDisposals.repositories.ProductRepo;
 import com.subash.SGDisposals.repositories.UserRepo;
 import com.subash.SGDisposals.service.IUserService;
 import com.subash.SGDisposals.util.JwtUtil;
@@ -40,6 +41,7 @@ public class UserService implements IUserService {
     private final OrderRepo ordersRepo;
     private final JwtUtil jwtUtil;
     private final PasswordEncoder passwordEncoder;
+    private final ProductRepo productRepo;
 
     @Transactional
     @Override
@@ -189,5 +191,35 @@ public class UserService implements IUserService {
             throw new ResourceNotFoundException("No Orders Placed For This User Account");
         }
         return orders;
+    }
+
+    @Override
+    public ProfileResDto getUserProfile(Long user_id) {
+        User user = userRepo.findById(user_id)
+                .orElseThrow(() -> new UnauthorizedRequestException("No User Found"));
+
+        List<Order> orders = ordersRepo.findByuserId(user_id);
+
+        float points = 0;
+
+        if (!orders.isEmpty()) {
+            points += (float) orders.stream()
+                    .mapToDouble(item -> {
+                        long id = Long.parseLong(String.valueOf(item.getProductId().intValue()));
+                        return productRepo.findById(id)
+                                .orElseThrow(() -> new RuntimeException("Product not found"))
+                                .getPoints() * item.getQuanity();
+                    })
+                    .sum();
+        }
+        points += user.getPoints();
+        ProfileResDto profileResDto = new ProfileResDto();
+        profileResDto.setUser_name(user.getName());
+        profileResDto.setEmail(user.getEmail());
+        profileResDto.setRole(user.getRole());
+        profileResDto.setJoined_at(user.getCreatedAt().toLocalDate());
+        profileResDto.setTotal_points(points);
+        profileResDto.setCurrent_points(user.getPoints());
+        return profileResDto;
     }
 }

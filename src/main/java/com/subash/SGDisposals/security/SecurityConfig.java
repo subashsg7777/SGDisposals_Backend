@@ -18,7 +18,7 @@ public class SecurityConfig {
 
         httpSecurity.cors(cors -> {}).csrf(csrf -> csrf.disable()).
                 authorizeHttpRequests(auth ->
-                auth.requestMatchers("/api/v2/user/login","/api/v2/user/add-user","/api/v2/collections/requests").permitAll().anyRequest().authenticated())
+                auth.requestMatchers("/api/v2/user/login","/api/v2/user/add-user").permitAll().anyRequest().authenticated())
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return httpSecurity.build();
