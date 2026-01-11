@@ -3,6 +3,7 @@ package com.subash.SGDisposals.service.implementation;
 import com.subash.SGDisposals.OrderStatusEnum;
 import com.subash.SGDisposals.RoleEnum;
 import com.subash.SGDisposals.dto.BuyProductReqDto;
+import com.subash.SGDisposals.dto.OrderResDto;
 import com.subash.SGDisposals.entity.Order;
 import com.subash.SGDisposals.entity.Product;
 import com.subash.SGDisposals.entity.User;
@@ -52,16 +53,16 @@ public class ProductService implements IProductService {
 
     @Transactional
     @Override
-    public Map buyProduct(BuyProductReqDto buyProductReqDto) {
+    public OrderResDto buyProduct(BuyProductReqDto buyProductReqDto) {
 
         Product product = productRepo.findById(buyProductReqDto.getProduct_id())
-                .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Please Select An Valid Product"));
 
         User user = userRepo.findById(buyProductReqDto.getUser_id())
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+                .orElseThrow(() -> new UnauthorizedRequestException("User is not Available Please. Check Credentials Carefully"));
 
         if (user.getPoints() <= (product.getPoints() * buyProductReqDto.getQuantity())) {
-            throw new InvalidRequestStateException("Insufficient points");
+            throw new InvalidRequestStateException("Insufficient points To Buy This Product");
         }
 
         if (!user.getTransactional_password().equals(buyProductReqDto.getTransactionalPassword())) {
@@ -93,10 +94,13 @@ public class ProductService implements IProductService {
             productRepo.save(product);
 
             order.setStatus(OrderStatusEnum.ORDERED);
-            Map map = new HashMap();
-            map.put("result",true);
-            map.put("product",product.getName());
-            return map;
+            OrderResDto orderResDto = new OrderResDto();
+            orderResDto.setOrder_id(order_id);
+            orderResDto.setProduct_id(buyProductReqDto.getProduct_id());
+            orderResDto.setQuantity(buyProductReqDto.getQuantity());
+            orderResDto.setPrice(product.getPoints() * buyProductReqDto.getQuantity());
+
+            return orderResDto;
         } catch (Exception e) {
             throw new OrderException("Can't Complete Order Purchase Right Now Try Again Later !...");
         }
@@ -125,6 +129,10 @@ public class ProductService implements IProductService {
         Order order = orderRepo.findById(Math.toIntExact(id)).orElseThrow(() -> {
             throw new ResourceNotFoundException("Order Not Found");
         });
+
+        if(order.getStatus() == OrderStatusEnum.IN_PROGRESS){
+            throw new InvalidRequestStateException("Order Is not Complete Yet Please Wait Until the Process is complete");
+        }
 
         if (order.getStatus() == OrderStatusEnum.ORDERED) {
             throw new InvalidRequestStateException("Order Already Completed");

@@ -7,6 +7,7 @@ import com.subash.SGDisposals.entity.CollectionRequest;
 import com.subash.SGDisposals.entity.User;
 import com.subash.SGDisposals.exception.InvalidRequestStateException;
 import com.subash.SGDisposals.exception.ResourceNotFoundException;
+import com.subash.SGDisposals.exception.UnauthorizedRequestException;
 import com.subash.SGDisposals.repositories.CollectionRepo;
 import com.subash.SGDisposals.repositories.UserRepo;
 import com.subash.SGDisposals.service.ICollectorService;
@@ -33,20 +34,21 @@ public class CollectorService implements ICollectorService {
                 throw new InvalidRequestStateException("Collector already collected");
             }
 
-            if (request != null && request.getStatus() == StatusEnum.REQUESTED) {
+
+            if(request.getStatus() == StatusEnum.CANCELLED){
+                throw new InvalidRequestStateException("Request Has been Cancelled Already");
+            }
+
+            else {
                 CollectedResDto  collectedResDto = new CollectedResDto();
                 request.setStatus(StatusEnum.COLLECTED);
                 collectionRepo.save(request);
                 collectedResDto.setRequest_id(request.getId());
-                collectedResDto.setMessage("Now Changed to Collected Status");
+                collectedResDto.setMessage("Now Request Status Changed to Collected");
                 collectedResDto.setCollector(user.getName());
                 return  collectedResDto;
             }
-
-            else{
-                throw new ResourceNotFoundException("No User Found For that Credentials Or Not Suitable Request Status");
-            }
         }
-        throw new InvalidRequestStateException("You Are Not Eligible For this Operation");
+        throw new UnauthorizedRequestException("You Are Not Eligible For this Operation");
     }
 }

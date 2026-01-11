@@ -1,5 +1,6 @@
 package com.subash.SGDisposals.security;
 
+import com.subash.SGDisposals.exception.UnauthorizedRequestException;
 import com.subash.SGDisposals.util.JwtUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -33,47 +34,37 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                                     FilterChain filterChain)
             throws ServletException, IOException {
 
-        String authHeader = request.getHeader("Authorization");
+        String uri = request.getRequestURI();   // e.g. "/api/v2/user/login"
 
-//        log.info(
-//                "JwtAuthFilter - Authorization header: {} Method: {} Path: {}",
-//                authHeader, request.getMethod(), request.getRequestURI()
-//        );
-
-        // 1️⃣ No header OR wrong prefix → skip
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            log.error("TOKEN IS NOT PRESENT IN REQUEST");
+        if (uri.equals("/api/v2/user/login") || uri.equals("/api/v2/user/signup")) {
             filterChain.doFilter(request, response);
             return;
+        }
+
+
+        String authHeader = request.getHeader("Authorization");
+
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            throw new UnauthorizedRequestException("User Header is Empty or Corrupted");
         }
 
         String token = authHeader.substring(7);
 
-        // 2️⃣ Token sanity check
         if (token.isBlank() || token.equals("null") || token.equals("undefined")) {
-            filterChain.doFilter(request, response);
-            return;
+            throw new UnauthorizedRequestException("Token is Empty or Corrupted !");
         }
 
-        // 3️⃣ JWT structural check (xxx.yyy.zzz)
         if (token.chars().filter(ch -> ch == '.').count() != 2) {
-            filterChain.doFilter(request, response);
-            return;
+            throw new UnauthorizedRequestException("Invalid Token Format");
         }
 
         try {
             if (!jwtUtil.validateToken(token)) {
-                log.error("INVALID TOKEN");
-                filterChain.doFilter(request, response);
-                return;
+                throw new UnauthorizedRequestException("Invalid Or Expired Token");
             }
 
             String email = jwtUtil.extractEmail(token);
             String role = jwtUtil.extractRole(token).toString();
-
-            log.info("Auth Header: {}", authHeader);
-
-
             SimpleGrantedAuthority authority =
                     new SimpleGrantedAuthority("ROLE_" + role);
 

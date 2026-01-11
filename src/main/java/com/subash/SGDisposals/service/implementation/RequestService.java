@@ -42,10 +42,10 @@ public class RequestService implements IRequestService {
     @Override
     public List<AllUserRequestDto> getAllRequestsForUser(Long id) {
 
-        User user = userRepo.findById(id).orElseThrow();
+        User user = userRepo.findById(id).orElseThrow(() -> {throw new
+                UnauthorizedRequestException("Invalid User Please Check You Credentials");});
         if(user.getRole() == RoleEnum.USER){
             List<CollectionRequest> result = collectionRepo.findByUserAndDeletedFalse(user).orElseThrow();
-            Map<Long, CollectionRequest> map = new HashMap<>();
             return result.stream().map(item -> {
                 AllUserRequestDto allUserRequestDto = new AllUserRequestDto();
                 allUserRequestDto.setName(item.getUser().getName());
@@ -80,6 +80,11 @@ public class RequestService implements IRequestService {
 
     protected Long calculatePoint(Map<String, Long> wastes) {
         List<PointsSystem> points_sys = pointsRepo.findAll();
+
+        if(points_sys.isEmpty()){
+            throw new ResourceNotFoundException("No Points System Data Found At the Moment");
+        }
+
         final long[] points = {0};
 
         wastes.forEach((key, value) ->
@@ -98,15 +103,13 @@ public class RequestService implements IRequestService {
                 }
             });
         });
-
-        log.info("Calculate Points: {}", points[0]);
         return points[0];
     }
 
     @CacheEvict(value = "requestforcollector", allEntries = true)
     @Transactional
     public CollectedResDto collectAndMark(CollectReqDto dto) {
-        Long points = collectRequest(dto); // updates user points
+        Long points = collectRequest(dto);
         CollectedResDto res = collectorService.markAsCollected(dto.getCollection_id(), dto.getCollector_id());
         res.setPoints(points);
         return res;
@@ -122,11 +125,14 @@ public class RequestService implements IRequestService {
             throw new UnauthorizedRequestException("You are not allowed to collect this request");
         }
 
-        User user = userRepo.findById(collectReqDto.getUser_id()).orElseThrow();
+        User user = userRepo.findById(collectReqDto.getUser_id()).orElseThrow(
+                () -> {throw new UnauthorizedRequestException("User Not Found for this Credentials");}
+        );
 
         if(user.getDeleted()){
             throw new UnauthorizedRequestException("This User has been deleted Already!");
         }
+
         CollectionRequest collectionRequest = collectionRepo.findById(collectReqDto.getCollection_id()).orElseThrow();
         if (collectionRequest.getStatus() != StatusEnum.REQUESTED){
             throw new InvalidRequestStateException("Invalid request To Process");

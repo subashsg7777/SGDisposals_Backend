@@ -2,7 +2,7 @@ package com.subash.SGDisposals.controller;
 
 import com.subash.SGDisposals.dto.AllProductsResponseDto;
 import com.subash.SGDisposals.dto.BuyProductReqDto;
-import com.subash.SGDisposals.dto.ProductBuyResDto;
+import com.subash.SGDisposals.dto.OrderResDto;
 import com.subash.SGDisposals.entity.Product;
 import com.subash.SGDisposals.service.IProductService;
 import jakarta.validation.Valid;
@@ -33,18 +33,8 @@ public class ProductController {
     @PostMapping("buy")
     public ResponseEntity<?> buyProduct(@Valid  @RequestBody BuyProductReqDto buyProductReqDto){
 
-        Map result = productService.buyProduct(buyProductReqDto);
-        ProductBuyResDto  productBuyResDto = new ProductBuyResDto();
-
-        if((boolean) result.get("result")){
-            productBuyResDto.setMessage("Order is Successful");
-            productBuyResDto.setQuantity(buyProductReqDto.getQuantity());
-            productBuyResDto.setProduct_id(buyProductReqDto.getProduct_id());
-            productBuyResDto.setProduct_name(result.get("product").toString());
-            return  ResponseEntity.ok(productBuyResDto);
-        }
-
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Order is Not Successful");
+        OrderResDto result = productService.buyProduct(buyProductReqDto);
+        return ResponseEntity.status(HttpStatus.OK).body(result);
     }
 
     @PostMapping("cancel")

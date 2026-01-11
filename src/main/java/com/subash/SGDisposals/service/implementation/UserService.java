@@ -117,16 +117,13 @@ public class UserService implements IUserService {
     @Override
     public AddNewReqResDto addNewRequest(AddNewRequestDto addNewRequestDto) {
 
-        Optional<User> user = userRepo.findById(addNewRequestDto.getUser());
-        if (user.isEmpty()) {
-            throw new ResourceNotFoundException("User not found");
-        }
+        User user = userRepo.findById(addNewRequestDto.getUser()).orElseThrow(() -> {throw new UnauthorizedRequestException("No User Found");});
 
-        if(user.get().getDeleted()){
+        if(user.getDeleted()){
             throw new UnauthorizedRequestException("user has been deleted!");
         }
 
-        if(user.get().getRole() != RoleEnum.USER){
+        if(user.getRole() != RoleEnum.USER){
             throw  new UnauthorizedRequestException("Only USER can cancel requests");
         }
 
@@ -134,7 +131,7 @@ public class UserService implements IUserService {
             AddNewReqResDto addNewReqResDto = new AddNewReqResDto();
             CollectionRequest coreRequest = new CollectionRequest();
             BeanUtils.copyProperties(addNewRequestDto, coreRequest);
-            coreRequest.setUser(user.orElseThrow());
+            coreRequest.setUser(user);
             coreRequest.setCreatedAt(LocalDateTime.now());
             coreRequest.setUpdatedAt(LocalDateTime.now());
             coreRequest.setDeleted(false);
@@ -142,7 +139,7 @@ public class UserService implements IUserService {
 
             collectionRepo.save(coreRequest);
             addNewReqResDto.setMessage("Request has been added!");
-            addNewReqResDto.setUser_id(user.get().getId());
+            addNewReqResDto.setUser_id(user.getId());
             addNewReqResDto.setAddress(addNewRequestDto.getAddress());
             return  addNewReqResDto;
         }
