@@ -34,7 +34,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                                     FilterChain filterChain)
             throws ServletException, IOException {
 
-        String uri = request.getRequestURI();   // e.g. "/api/v2/user/login"
+        String uri = request.getRequestURI();
 
         if (uri.equals("/api/v2/user/login") || uri.equals("/api/v2/user/signup")) {
             filterChain.doFilter(request, response);
@@ -43,11 +43,6 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
 
         String authHeader = request.getHeader("Authorization");
-
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            throw new UnauthorizedRequestException("User Header is Empty or Corrupted");
-        }
-
         String token = authHeader.substring(7);
 
         if (token.isBlank() || token.equals("null") || token.equals("undefined")) {
