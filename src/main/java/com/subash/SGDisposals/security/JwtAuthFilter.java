@@ -21,12 +21,12 @@ import java.io.IOException;
 import java.util.List;
 
 @Component
+@RequiredArgsConstructor
 public class JwtAuthFilter extends OncePerRequestFilter {
 
     private static final Logger log = LoggerFactory.getLogger(JwtAuthFilter.class);
 
-    @Autowired
-    private JwtUtil jwtUtil;
+    private final JwtUtil jwtUtil;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -36,30 +36,44 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         String uri = request.getRequestURI();
 
-        if (uri.equals("/api/v2/user/login") || uri.equals("/api/v2/user/signup")) {
+        // Public endpoints
+        if (uri.startsWith("/api/v2/user/login")
+                || uri.startsWith("/api/v2/user/signup")) {
             filterChain.doFilter(request, response);
             return;
         }
 
-
         String authHeader = request.getHeader("Authorization");
-        String token = authHeader.substring(7);
 
-        if (token.isBlank() || token.equals("null") || token.equals("undefined")) {
-            throw new UnauthorizedRequestException("Token is Empty or Corrupted !");
+        // No header → let Spring Security handle it (403)
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            log.warn("Missing or invalid Authorization header");
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Missing Authorization header");
+            return;
         }
 
+        String token = authHeader.substring(7).trim();
+
+        if (token.isEmpty() || token.equalsIgnoreCase("null")) {
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Empty JWT token");
+            return;
+        }
+
+        // JWT format sanity check
         if (token.chars().filter(ch -> ch == '.').count() != 2) {
-            throw new UnauthorizedRequestException("Invalid Token Format");
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Malformed JWT token");
+            return;
         }
 
         try {
             if (!jwtUtil.validateToken(token)) {
-                throw new UnauthorizedRequestException("Invalid Or Expired Token");
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid or expired JWT");
+                return;
             }
 
             String email = jwtUtil.extractEmail(token);
-            String role = jwtUtil.extractRole(token).toString();
+            String role = String.valueOf(jwtUtil.extractRole(token));
+
             SimpleGrantedAuthority authority =
                     new SimpleGrantedAuthority("ROLE_" + role);
 
@@ -77,7 +91,9 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
         } catch (Exception e) {
-            log.warn("JwtAuthFilter - invalid token: {}", e.getMessage());
+            log.error("JWT authentication failed", e);
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "JWT authentication failed");
+            return;
         }
 
         filterChain.doFilter(request, response);
