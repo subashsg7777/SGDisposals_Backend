@@ -1,13 +1,17 @@
 package com.subash.SGDisposals.controller;
 
+import com.subash.SGDisposals.ProductMapper;
 import com.subash.SGDisposals.dto.AllProductsResponseDto;
 import com.subash.SGDisposals.dto.BuyProductReqDto;
 import com.subash.SGDisposals.dto.OrderResDto;
+import com.subash.SGDisposals.dto.ProductDto;
 import com.subash.SGDisposals.entity.Product;
 import com.subash.SGDisposals.service.IProductService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,18 +19,32 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @RestController
 @RequestMapping("api/v2/product")
 @RequiredArgsConstructor
 public class ProductController {
 
     private final IProductService productService;
+    private final ProductMapper productMapper;
 
     @GetMapping
-    public ResponseEntity<?> getAllProducts(){
-        List<Product> results = productService.getAllProducts();
+    public ResponseEntity<AllProductsResponseDto> getAllProducts(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "4") int size
+    ){
+        log.info("Page No and size for paginbation : ",page, size);
+        Page<Product> results = productService.getAllProducts(page,size);
+
+        List<ProductDto> productDtos = results.getContent().stream().map(product -> productMapper.toDto(product) ).toList();
+
         AllProductsResponseDto allProductsResponseDto = new AllProductsResponseDto();
-        allProductsResponseDto.setProducts(results);
+        allProductsResponseDto.setProducts(productDtos);
+        allProductsResponseDto.setPage(results.getNumber());
+        allProductsResponseDto.setSize(results.getSize());
+        allProductsResponseDto.setTotalElements(results.getTotalElements());
+        allProductsResponseDto.setTotalPages(results.getTotalPages());
+        allProductsResponseDto.setLast(results.isLast());
         return ResponseEntity.ok(allProductsResponseDto);
     }
 

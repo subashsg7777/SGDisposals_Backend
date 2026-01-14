@@ -16,6 +16,9 @@ import com.subash.SGDisposals.repositories.ProductRepo;
 import com.subash.SGDisposals.repositories.UserRepo;
 import com.subash.SGDisposals.service.IProductService;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -42,13 +45,9 @@ public class ProductService implements IProductService {
 
     @Cacheable
     @Override
-    public List<Product> getAllProducts() {
-
-        List<Product> products = productRepo.findAll();
-        if (products.isEmpty()){
-            throw new ResourceNotFoundException("No Products found");
-        }
-        return products;
+    public Page<Product> getAllProducts(int pageno, int size) {
+        Pageable pageable = PageRequest.of(pageno,size);
+        return productRepo.findAll(pageable);
     }
 
     @Transactional

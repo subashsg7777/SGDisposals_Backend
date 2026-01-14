@@ -8,5 +8,11 @@ import java.util.List;
 @Data
 public class AllProductsResponseDto {
 
-    private List<Product> products;
+    private List<ProductDto> products;
+
+    private int page;
+    private int size;
+    private long totalElements;
+    private int totalPages;
+    private boolean last;
 }
