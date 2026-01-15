@@ -27,10 +27,13 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        String path = request.getServletPath();
-        return request.getMethod().equals("OPTIONS")
-                || path.startsWith("/api/v2/user/login")
-                || path.startsWith("/api/v2/user/add-user");
+        String uri = request.getRequestURI();
+
+        log.warn("JWT FILTER CHECK → {} {}", request.getMethod(), uri);
+
+        return request.getMethod().equalsIgnoreCase("OPTIONS")
+                || uri.contains("/user/login")
+                || uri.contains("/user/add-user");
     }
 
     @Override
