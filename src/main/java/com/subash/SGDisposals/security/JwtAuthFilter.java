@@ -45,25 +45,9 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         String authHeader = request.getHeader("Authorization");
 
-        // No header → let Spring Security handle it (403)
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            log.warn("Missing or invalid Authorization header");
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Missing Authorization header");
-            return;
-        }
 
         String token = authHeader.substring(7).trim();
-
-        if (token.isEmpty() || token.equalsIgnoreCase("null")) {
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Empty JWT token");
-            return;
-        }
-
-        // JWT format sanity check
-        if (token.chars().filter(ch -> ch == '.').count() != 2) {
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Malformed JWT token");
-            return;
-        }
+        
 
         try {
             if (!jwtUtil.validateToken(token)) {
