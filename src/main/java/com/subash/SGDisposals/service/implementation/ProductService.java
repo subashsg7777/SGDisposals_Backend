@@ -14,7 +14,9 @@ import com.subash.SGDisposals.exception.UnauthorizedRequestException;
 import com.subash.SGDisposals.repositories.OrderRepo;
 import com.subash.SGDisposals.repositories.ProductRepo;
 import com.subash.SGDisposals.repositories.UserRepo;
+import com.subash.SGDisposals.service.EmailService;
 import com.subash.SGDisposals.service.IProductService;
+import jakarta.validation.constraints.Email;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -36,6 +38,7 @@ public class ProductService implements IProductService {
     private final ProductRepo productRepo;
     private final UserRepo userRepo;
     private final OrderRepo orderRepo;
+    private final EmailService emailService;
 
     private String generateOrderId(){
         String placeholders = "SG_DP_OR_";
@@ -98,6 +101,9 @@ public class ProductService implements IProductService {
             orderResDto.setProduct_id(buyProductReqDto.getProduct_id());
             orderResDto.setQuantity(buyProductReqDto.getQuantity());
             orderResDto.setPrice(product.getPoints() * buyProductReqDto.getQuantity());
+
+            emailService.sendOrderReceipt(user.getEmail(),order_id,product.getId(),product.getName(),
+                    product.getPoints(),buyProductReqDto.getQuantity(),product.getPoints() * buyProductReqDto.getQuantity());
 
             return orderResDto;
         } catch (Exception e) {

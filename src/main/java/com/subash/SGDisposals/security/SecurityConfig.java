@@ -26,7 +26,9 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/api/v2/user/login",
-                                "/api/v2/user/add-user"
+                                "/api/v2/user/add-user",
+                                "/api/v2/user/verify-email",
+                                "/api/v2/user/verify-otp"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )

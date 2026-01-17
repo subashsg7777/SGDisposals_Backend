@@ -33,7 +33,9 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         return request.getMethod().equalsIgnoreCase("OPTIONS")
                 || uri.contains("/user/login")
-                || uri.contains("/user/add-user");
+                || uri.contains("/user/add-user")
+                || uri.contains("/user/verify-email")
+                || uri.contains("/user/verify-otp");
     }
 
     @Override

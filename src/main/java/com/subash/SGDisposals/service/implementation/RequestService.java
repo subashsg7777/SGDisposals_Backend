@@ -14,6 +14,7 @@ import com.subash.SGDisposals.exception.UnauthorizedRequestException;
 import com.subash.SGDisposals.repositories.CollectionRepo;
 import com.subash.SGDisposals.repositories.PointsRepo;
 import com.subash.SGDisposals.repositories.UserRepo;
+import com.subash.SGDisposals.service.EmailService;
 import com.subash.SGDisposals.service.IRequestService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -37,6 +38,7 @@ public class RequestService implements IRequestService {
     private final UserRepo userRepo;
     private final PointsRepo pointsRepo;
     private final CollectorService collectorService;
+    private final EmailService emailService;
 
     @Cacheable
     @Override
@@ -146,6 +148,9 @@ public class RequestService implements IRequestService {
         Long pointsToUpdate = points + user.getPoints();
         user.setPoints(Math.toIntExact(pointsToUpdate));
         userRepo.save(user);
+
+        emailService.sendCollectionRecipt(user.getEmail(),collectReqDto.getWeights(), Math.toIntExact(pointsToUpdate));
+
         return points;
     }
 }

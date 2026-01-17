@@ -13,8 +13,10 @@ import com.subash.SGDisposals.repositories.CollectionRepo;
 import com.subash.SGDisposals.repositories.OrderRepo;
 import com.subash.SGDisposals.repositories.ProductRepo;
 import com.subash.SGDisposals.repositories.UserRepo;
+import com.subash.SGDisposals.service.EmailService;
 import com.subash.SGDisposals.service.IUserService;
 import com.subash.SGDisposals.util.JwtUtil;
+import com.subash.SGDisposals.util.OtpManager;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,6 +31,7 @@ import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Random;
 
 @Service
 @RequiredArgsConstructor
@@ -42,6 +45,8 @@ public class UserService implements IUserService {
     private final JwtUtil jwtUtil;
     private final PasswordEncoder passwordEncoder;
     private final ProductRepo productRepo;
+    private final EmailService emailService;
+    private final OtpManager otpManager;
 
     @Transactional
     @Override
@@ -141,6 +146,9 @@ public class UserService implements IUserService {
             addNewReqResDto.setMessage("Request has been added!");
             addNewReqResDto.setUser_id(user.getId());
             addNewReqResDto.setAddress(addNewRequestDto.getAddress());
+
+            emailService.sendRequestAck(user.getEmail(),addNewRequestDto.getAddress());
+
             return  addNewReqResDto;
         }
 
@@ -218,5 +226,25 @@ public class UserService implements IUserService {
         profileResDto.setTotal_points(points);
         profileResDto.setCurrent_points(user.getPoints());
         return profileResDto;
+    }
+
+    @Override
+    public boolean sendOTP(String email) {
+
+    int otp = otpManager.generateRandomOtp(email);
+    log.info("The Generated OTP is : "+ otp);
+        try{
+            emailService.sendOtp(email,String.valueOf(otp));
+            return true;
+        }
+
+        catch (Exception ee){
+            throw new InvalidRequestStateException("Failed To Send Verification Email");
+        }
+    }
+
+    @Override
+    public boolean verifyOtp(String email, String otp) {
+        return otpManager.verifyOtp(email,otp);
     }
 }

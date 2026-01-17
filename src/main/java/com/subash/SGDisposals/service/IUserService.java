@@ -16,4 +16,6 @@ public interface IUserService {
     int getUserPoints(Long id);
     List<Order> getAllOrdersForUser(Long user_id);
     ProfileResDto getUserProfile(Long user_id);
+    boolean sendOTP(String email);
+    boolean verifyOtp(String email,String otp);
 }

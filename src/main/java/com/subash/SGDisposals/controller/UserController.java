@@ -2,6 +2,7 @@ package com.subash.SGDisposals.controller;
 
 import com.subash.SGDisposals.dto.*;
 import com.subash.SGDisposals.entity.Order;
+import com.subash.SGDisposals.exception.InvalidRequestStateException;
 import com.subash.SGDisposals.service.IRequestService;
 import com.subash.SGDisposals.service.IUserService;
 import jakarta.validation.Valid;
@@ -79,5 +80,20 @@ public class UserController {
     public ResponseEntity<ProfileResDto> getUserProfile(@Validated @NotNull @RequestParam Long user_id){
         ProfileResDto resposnse = userService.getUserProfile(user_id);
         return ResponseEntity.status(HttpStatus.OK).body(resposnse);
+    }
+
+    @GetMapping("verify-email")
+    public boolean verifyEmailUsingOTP(@Validated @NotBlank @RequestParam String email){
+
+        boolean result = userService.sendOTP(email);
+        if(result){
+            return true;
+        }
+        throw new InvalidRequestStateException("Something went wrong");
+    }
+
+    @PostMapping("verify-otp")
+    public boolean verifyEmailOtp(@Validated @NotBlank @RequestParam String email, @Validated @NotBlank @RequestParam String otp){
+        return userService.verifyOtp(email,otp);
     }
 }
