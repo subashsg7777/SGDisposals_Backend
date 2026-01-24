@@ -2,6 +2,8 @@ package com.subash.SGDisposals.service;
 
 import com.subash.SGDisposals.exception.InvalidRequestStateException;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
@@ -12,6 +14,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class EmailService {
 
+    private static final Logger log = LoggerFactory.getLogger(EmailService.class);
     private final JavaMailSender javaMailSender;
 
     public boolean sendOtp(String toEmail, String otp){
@@ -78,6 +81,27 @@ public class EmailService {
         }
         catch (Exception e) {
             throw new InvalidRequestStateException("Can't Send OrderReceipt Right now");
+        }
+    }
+
+
+    public boolean forgotOTP(String email,String otp){
+
+        try{
+            SimpleMailMessage simpleMailMessage =  new SimpleMailMessage();
+            simpleMailMessage.setFrom("subashsg7777@gmail.com");
+            simpleMailMessage.setTo(email);
+            simpleMailMessage.setSubject("Here is Your OTP to Reset Your Account Password");
+            simpleMailMessage.setText("Below Will be The One Time Password For Resetting your Account Password \n \n"
+                    +otp+"\n If you have not initiated Forgot Password Then You Can Appeal in Our Customer Service mail at : \n" +
+                    " subashsg7777@gmail.com");
+            javaMailSender.send(simpleMailMessage);
+            return true;
+        }
+
+        catch (Exception ee){
+            log.error("Can't Send Forgot Password Otp");
+            throw new InvalidRequestStateException("Can't Send Forgot password");
         }
     }
 }

@@ -247,4 +247,42 @@ public class UserService implements IUserService {
     public boolean verifyOtp(String email, String otp) {
         return otpManager.verifyOtp(email,otp);
     }
+
+    @Override
+    public boolean forgot(String email) {
+        try{
+            int otp = otpManager.generateRandomOtp(email);
+            emailService.forgotOTP(email,String.valueOf(otp));
+
+            return true;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public String verifyForgot(String email, String otp) {
+        boolean res = otpManager.verifyForgot(email,otp);
+        if(res){
+            User user = userRepo.findByEmail(email).orElseThrow(() -> {throw new UnauthorizedRequestException("No Account Found for this Credentials");});
+            String token = jwtUtil.generateToken(email,user.getRole());
+            return token;
+        }
+        return "";
+    }
+
+    @Override
+    public boolean updatePassword(String email, String password) {
+        try{
+            User user = userRepo.findByEmail(email).orElseThrow(() -> {throw new UnauthorizedRequestException("No User Found");});
+            String hashedPassword = passwordEncoder.encode(password);
+            user.setPassword(hashedPassword);
+            userRepo.save(user);
+            return  true;
+        }
+        catch (Exception e) {
+            log.error(e.toString());
+            return false;
+        }
+    }
 }

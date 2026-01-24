@@ -13,6 +13,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtAuthFilter jwtAuthFilter;
+    private final RateLimitFilter rateLimitFilter;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -28,10 +29,12 @@ public class SecurityConfig {
                                 "/api/v2/user/login",
                                 "/api/v2/user/add-user",
                                 "/api/v2/user/verify-email",
-                                "/api/v2/user/verify-otp"
+                                "/api/v2/user/verify-otp",
+                                "/api/v2/user/forgot",
+                                "/api/v2/user/verify-forgot"
                         ).permitAll()
                         .anyRequest().authenticated()
-                )
+                ).addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

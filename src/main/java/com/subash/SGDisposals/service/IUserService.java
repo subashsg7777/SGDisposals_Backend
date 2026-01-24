@@ -18,4 +18,7 @@ public interface IUserService {
     ProfileResDto getUserProfile(Long user_id);
     boolean sendOTP(String email);
     boolean verifyOtp(String email,String otp);
+    boolean forgot(String email);
+    String verifyForgot(String email,String otp);
+    boolean updatePassword(String email,String password);
 }

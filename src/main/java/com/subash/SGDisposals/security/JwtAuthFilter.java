@@ -35,7 +35,9 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 || uri.contains("/user/login")
                 || uri.contains("/user/add-user")
                 || uri.contains("/user/verify-email")
-                || uri.contains("/user/verify-otp");
+                || uri.contains("/user/verify-otp")
+                || uri.contains("/user/forgot")
+                || uri.contains("/user/verify-forgot");
     }
 
     @Override
@@ -45,9 +47,10 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
         String authHeader = request.getHeader("Authorization");
-
+        logger.info("Auth Header : "+authHeader);
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Missing JWT");
+            logger.info("No Token Found So resuming other filters");
+            filterChain.doFilter(request, response);
             return;
         }
 

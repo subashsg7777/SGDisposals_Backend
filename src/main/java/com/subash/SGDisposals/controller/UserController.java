@@ -3,11 +3,15 @@ package com.subash.SGDisposals.controller;
 import com.subash.SGDisposals.dto.*;
 import com.subash.SGDisposals.entity.Order;
 import com.subash.SGDisposals.exception.InvalidRequestStateException;
+import com.subash.SGDisposals.service.EmailService;
 import com.subash.SGDisposals.service.IRequestService;
 import com.subash.SGDisposals.service.IUserService;
+import com.subash.SGDisposals.util.OtpManager;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
 import org.springframework.http.HttpStatus;
@@ -28,6 +32,8 @@ public class UserController {
 
     private final IUserService userService;
     private final IRequestService requestService;
+    private final OtpManager otpManager;
+    private final EmailService emailService;
 
     @PostMapping("add-user")
     private ResponseEntity<AddUserResDto> addUser(@Valid  @RequestBody UserRegisterReqDto userRegisterReqDto) {
@@ -95,5 +101,34 @@ public class UserController {
     @PostMapping("verify-otp")
     public boolean verifyEmailOtp(@Validated @NotBlank @RequestParam String email, @Validated @NotBlank @RequestParam String otp){
         return userService.verifyOtp(email,otp);
+    }
+
+    @GetMapping("forgot")
+    public ResponseEntity<String> forgotOtpRequest(@Validated @NotBlank @Email @RequestParam String email){
+        boolean res = userService.forgot(email);
+        if(res){
+            return ResponseEntity.status(HttpStatus.OK).body("Otp Sent");
+        }
+        return ResponseEntity.status(HttpStatus.CONFLICT).body("Can't Send OTP");
+    }
+
+    @PostMapping("verify-forgot")
+    public ResponseEntity<String> verifyForgot(@Validated @NotBlank @Email @RequestParam String email,
+                                @Validated @NotBlank @RequestParam String otp){
+
+        String result = userService.verifyForgot(email,otp);
+        if(result != ""){
+            return  ResponseEntity.status(HttpStatus.OK).body(result);
+        }
+        return ResponseEntity.status(HttpStatus.CONFLICT).body("Can't Verify Otp Right Now");
+    }
+
+    @PutMapping("update-password")
+    public ResponseEntity<?> updateUserPassword(@Valid @RequestBody ChangePasswordReqDto changePasswordReqDto){
+        boolean res = userService.updatePassword(changePasswordReqDto.getEmail(),changePasswordReqDto.getPassword());
+        if(res){
+            return ResponseEntity.status(HttpStatus.CREATED).body(true);
+        }
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Can't Update Your Password Right Now !...");
     }
 }
